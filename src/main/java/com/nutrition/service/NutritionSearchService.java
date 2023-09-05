@@ -40,8 +40,8 @@ public final class NutritionSearchService {
                         || food.getCalories() >= request.getMinCalories())
                 .filter(food -> Objects.isNull(request.getMaxCalories())
                         || food.getCalories() <= request.getMaxCalories())
-                .limit(request.getLimit())
                 .sorted(buildComparator(request))
+                .limit(request.getLimit())
                 .collect(toList());
     }
 

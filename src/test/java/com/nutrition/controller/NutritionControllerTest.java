@@ -79,7 +79,6 @@ class NutritionControllerTest {
     }
 
     @Nested
-    @Disabled("Until all steps implemented")
     class AllParamsTest {
 
         @Test
