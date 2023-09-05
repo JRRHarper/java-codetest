@@ -1,20 +1,16 @@
 package com.nutrition.service;
 
+import com.nutrition.data.CsvDataLoader;
+import com.nutrition.data.DataLoader;
 import com.nutrition.dto.NutritionSearchRequest;
 import com.nutrition.dto.Sort;
 import com.nutrition.dto.SortField;
 import com.nutrition.dto.SortOrder;
 import com.nutrition.model.Food;
-import com.opencsv.CSVReaderHeaderAware;
-import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.*;
 
-import static com.nutrition.util.CsvColumnHeading.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
 public final class NutritionSearchService {
@@ -26,14 +22,16 @@ public final class NutritionSearchService {
         FIELD_COMPARATORS.put(SortField.NAME, Comparator.comparing(Food::getName, String.CASE_INSENSITIVE_ORDER));
     }
 
-    private final File csvFile;
+    private final File file;
+    private final DataLoader dataLoader;
 
-    public NutritionSearchService(File csvFile) {
-        this.csvFile = csvFile;
+    public NutritionSearchService(File file, DataLoader dataLoader) {
+        this.file = file;
+        this.dataLoader = new CsvDataLoader();
     }
 
     public List<Food> searchNutrition(NutritionSearchRequest request) {
-        return loadFromCsvFile(csvFile).stream()
+        return loadFromFile(file).stream()
                 .filter(food -> Objects.isNull(request.getFatRating())
                         || food.getFatRating() == request.getFatRating())
                 .filter(food -> Objects.isNull(request.getMinCalories())
@@ -57,42 +55,8 @@ public final class NutritionSearchService {
         return sort.getOrder() == SortOrder.ASC ? comparator : comparator.reversed();
     }
 
-    private static List<Food> loadFromCsvFile(File file) {
-        try (var csvReader = new CSVReaderHeaderAware(new FileReader(file, UTF_8))) {
-
-            Map<String, String> rowData;
-            var foods = new ArrayList<Food>();
-
-            while ((rowData = csvReader.readMap()) != null) {
-                if (isValidFood(rowData)) {
-                    foods.add(createFood(rowData));
-                }
-            }
-
-            return foods;
-        } catch (IOException | CsvValidationException ex) {
-            throw new RuntimeException(ex);
-        }
+    private List<Food> loadFromFile(File file) {
+        return dataLoader.loadData(file);
     }
 
-    private static boolean isValidFood(Map<String, String> rowData) {
-        return isValidRow(rowData) && rowData.get(SERVING_SIZE).equals("100 g");
-    }
-
-    private static boolean isValidRow(Map<String, String> rowData) {
-        var requiredFields = List.of(NAME_FIELD, CALORIES_FIELD, TOTAL_FAT_FIELD, CAFFEINE_FIELD, SERVING_SIZE);
-
-        return rowData.entrySet().stream()
-            .filter(e1 -> requiredFields.contains(e1.getKey()))
-            .noneMatch(e2 -> e2.getValue().isBlank());
-    }
-
-    private static Food createFood(Map<String, String> rowData) {
-        var name = rowData.get(NAME_FIELD);
-        var calories = Integer.parseInt(rowData.get(CALORIES_FIELD));
-        var totalFat = Double.parseDouble(rowData.get(TOTAL_FAT_FIELD).substring(0, rowData.get(TOTAL_FAT_FIELD).indexOf('g')));
-        var caffeine = rowData.get(CAFFEINE_FIELD);
-
-        return new Food(name, calories, totalFat, caffeine);
-    }
 }

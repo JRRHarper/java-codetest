@@ -1,5 +1,6 @@
 package com.nutrition;
 
+import com.nutrition.data.CsvDataLoader;
 import com.nutrition.service.NutritionSearchService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -15,14 +16,20 @@ public class NutritionSearchApplication {
 
     @Value("${nutrition-search.data.file.name}")
     private String nutritionDataFile;
+    @Value("${nutrition-search.data.file.type}")
+    private String nutritionDataFormat;
 
     @Bean
     public NutritionSearchService nutritionSearchService() {
-        return new NutritionSearchService(csvFile());
+        if (nutritionDataFormat.equalsIgnoreCase("CSV")) {
+            return new NutritionSearchService(dataFile(), new CsvDataLoader());
+        } else {
+            throw new IllegalArgumentException("Unknown data format: " + nutritionDataFormat);
+        }
     }
 
     @Bean
-    public File csvFile() {
+    public File dataFile() {
         try {
             var nutritionData = new ClassPathResource(nutritionDataFile);
             return nutritionData.getFile();
