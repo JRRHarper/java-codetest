@@ -34,7 +34,12 @@ public final class NutritionSearchService {
 
     public List<Food> searchNutrition(NutritionSearchRequest request) {
         return loadFromCsvFile(csvFile).stream()
-                .filter(item -> true)
+                .filter(food -> Objects.isNull(request.getFatRating())
+                        || food.getFatRating() == request.getFatRating())
+                .filter(food -> Objects.isNull(request.getMinCalories())
+                        || food.getCalories() >= request.getMinCalories())
+                .filter(food -> Objects.isNull(request.getMaxCalories())
+                        || food.getCalories() <= request.getMaxCalories())
                 .limit(request.getLimit())
                 .sorted(buildComparator(request))
                 .collect(toList());

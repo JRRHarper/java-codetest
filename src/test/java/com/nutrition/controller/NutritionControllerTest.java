@@ -39,7 +39,6 @@ class NutritionControllerTest {
     }
 
     @Nested
-    @Disabled("Until filtering is implemented")
     class FilteringTest {
 
         @Test
